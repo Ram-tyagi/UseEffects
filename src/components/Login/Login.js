@@ -1,66 +1,97 @@
-import React, { useState,useEffect,useReducer } from 'react';
+import React, { useState,useEffect,useReducer,useContext } from 'react';
 
 import Card from '../UI/Card/Card';
 import classes from './Login.module.css';
 import Button from '../UI/Button/Button';
+import AuthContext from '../../Store/auth-context'
 
 const emailReducer=(state,action)=>{
   if(action.type==="USER-INPUT"){
-    return {value:action.val,isValid:action.val.includes('@')}
+    return {value: action.val, isValid: action.val.includes('@')}
   }
   if(action.type==="INPUT_BLUR"){
-    return {value:state.value,isValid:state.value.includes('@')}
+    return {value: state.value, isValid: state.value.includes('@')}
+  }
+ return {value:'',isValid: false}
+}
+const passwordReducer=(state,action)=>{
+  if(action.type==="USER-INPUT"){
+    return {value: action.val, isValid: action.val.trim().length>6}
+  }
+  if(action.type==="INPUT_BLUR"){
+    return {value: state.value, isValid: state.value.trim().length>6}
+  }
+ return {value:'',isValid: false}
+}
+const collegeReducer=(state,action)=>{
+  if(action.type==="USER-INPUT"){
+    return {value: action.val, isValid: action.val.trim().length>6}
+  }
+  if(action.type==="INPUT_BLUR"){
+    return {value: state.value, isValid: state.value.trim().length>6}
   }
  return {value:'',isValid: false}
 }
 
+
 const Login = (props) => {
  // const [enteredEmail, setEnteredEmail] = useState('');
  // const [emailIsValid, setEmailIsValid] = useState();
-  const [enteredPassword, setEnteredPassword] = useState('');
-  const [passwordIsValid, setPasswordIsValid] = useState();
-  const [enteredCollege,setEnteredCollege]=useState('')
-  const [collegeIsValid,setCollegeIsValid]=useState('')
+  //const [enteredPassword, setEnteredPassword] = useState('');
+ // const [passwordIsValid, setPasswordIsValid] = useState();
+  //const [enteredCollege,setEnteredCollege]=useState('')
+  //const [collegeIsValid,setCollegeIsValid]=useState('')
   const [formIsValid, setFormIsValid] = useState(false);
 
-const [emailState,dispatchEmail] =useReducer(emailReducer,{value:'',isValid:false});
+const [emailState,dispatchEmail] =useReducer(emailReducer,{value:'',isValid:null,});
+const [passwordState,dispatchPassword] =useReducer(passwordReducer,{value:'',isValid:null});
+const [collegeState,dispatchCollege] =useReducer(collegeReducer,{value:'',isValid:null});
+
+const authCtx=useContext(AuthContext);
 
   useEffect(()=>{
     console.log('effect running')
     return()=>{
       console.log('effect cleanup')
   }
-  },[enteredPassword])
-  //useEffect(()=>{
-  // const identifier= setTimeout(()=>{
-      
-   // },500)
+  },[])
+
+  const {isValid:emailIsValid}=emailState
+  const {isValid:passwordIsValid}=passwordState
+  const {isValid:collegeIsValid}=collegeState
+  useEffect(()=>{
+   const identifier= setTimeout(()=>{
+      setFormIsValid(
+        emailIsValid && passwordIsValid && collegeIsValid
+      )
+    },500)
     
-  // return ()=>{
-  //  clearTimeout(identifier);
-   //};
-  //},[enteredEmail,enteredPassword,enteredCollege])
+   return ()=>{
+    clearTimeout(identifier);
+   };
+  },[emailIsValid, passwordIsValid,collegeIsValid])
   const emailChangeHandler = (event) => {
     dispatchEmail({type:'USER-INPUT',val:event.target.value})
-    setFormIsValid(
-      emailState.value.includes('@') && enteredPassword.trim().length > 6 && enteredCollege.trim().length>6
-    );
+    //setFormIsValid(
+   //   emailState.value.includes('@') && passwordState.isValid && enteredCollege.trim().length>6
+   // );
    
   };
 
   const passwordChangeHandler = (event) => {
-    setEnteredPassword(event.target.value);
+   dispatchPassword({type:'USER_INPUT',val:event.target.value})
 
-    setFormIsValid(
-      event.target.value.trim().length > 6 && emailState.isValid && enteredCollege.trim().length>6
-    );
+    //setFormIsValid(
+    //  event.target.value.trim().length > 6 && emailState.isValid && enteredCollege.trim().length>6
+   // );
   };
   const collegeChangeHandler = (event) => {
-    setEnteredCollege(event.target.value);
+   // setEnteredCollege(event.target.value);
 
-    setFormIsValid(
-      event.target.value.trim().length > 6 && emailState.isValid && enteredPassword.trim().length>6
-    );
+   dispatchCollege({type:'USER_INPUT',val:event.target.value})
+   // setFormIsValid(
+    //  event.target.value.trim().length > 6 && emailState.isValid &&  passwordState.isValid
+   // );
   };
 
   const validateEmailHandler = () => {
@@ -69,15 +100,15 @@ const [emailState,dispatchEmail] =useReducer(emailReducer,{value:'',isValid:fals
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(enteredPassword.trim().length > 6);
+    dispatchPassword({type:"INPUT_BLUR"})
   };
   const validateCollegeHandler=()=>{
-    setCollegeIsValid(enteredCollege.trim().length>6)
+    dispatchCollege({type:"INPUT_BLUR"})
   }
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(emailState.value, enteredPassword,enteredCollege);
+    authCtx.onLogin(emailState.value, passwordState.value,collegeState.value);
   };
 
   return (
@@ -99,28 +130,28 @@ const [emailState,dispatchEmail] =useReducer(emailReducer,{value:'',isValid:fals
         </div>
         <div
           className={`${classes.control} ${
-            passwordIsValid === false ? classes.invalid : ''
+            passwordState.isValid === false ? classes.invalid : ''
           }`}
         >
           <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
-            value={enteredPassword}
+            value={passwordState.value}
             onChange={passwordChangeHandler}
             onBlur={validatePasswordHandler}
           />
           </div>
            <div
           className={`${classes.control} ${
-            collegeIsValid === false ? classes.invalid : ''
+            collegeState.isValid === false ? classes.invalid : ''
           }`}
         >
           <label htmlFor="college">College Name</label>
           <input
             type="text"
             id="college"
-            value={enteredCollege}
+            value={collegeState.value}
             onChange={collegeChangeHandler}
             onBlur={validateCollegeHandler}
           />
